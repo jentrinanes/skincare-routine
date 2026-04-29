@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skin Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;display=swap" rel="stylesheet"/>
+  <script type='text/javascript' nonce='UkSYku/EJnSAK8Q+0N/WBA==' src='https://claude.ai/PoRFsFp2q6GWUWin9hzymrL7iSKzT0ZOWm6oJxPArc7vWfdkIOQke_ybuySL45iXutzhBnmFZ2qa2Y5dqwvqWrESxFwuOZp0VAF9q_c-_jtOE4wIqamaM-D-V82bL1u0kMIdTQPub3sJwjSDDNuRxQJnlKvtHepPcuCk342CTQOhIPp88o77ZDEKx_a_FFfA4h8drsXcbQx0ER8UJlAikByxK17WKv-cNevybBib1k5c-t819Lx27kcpcGhZBYQvyammGi2sgjVcHpQiuaC0Lav-5LwmpWuj3ixc1Ma4mcpZNrDz9pQuaUekS-uYNdBMBhHXEvK5VxB3RgfQ2ZA9EV3I-J6x9UM7RYqWhi3S1Jc3p8G_zWC2u8vmrS8t8r3tyRo0dtajfySb688btHQmZyIHGe7UmYj1mDRlk18YRujfmkZ-Nd9ZG0NhYNUdTcKeDbZB02mGgK58X3kIczLXGM8rItZMLEk4VikzVgnyezIMT-hHypwK1LYk6uBCLgN8Ws9TuZ05JzQBnFT7QsXBtZ62psUOocWI6l71cmqNIOMdqW7BsrOkYOUVoyIA1CvUWw'></script><script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'sans-serif'] },
+          colors: {
+            sage: {
+              50:  '#f2f7f2', 100: '#e1ede1', 200: '#c3dac3',
+              300: '#98bf98', 400: '#679f67', 500: '#4a844a',
+              600: '#3a6a3a', 700: '#305530', 800: '#284528',
+              900: '#223922',
+            },
+            cream: {
+              50:  '#fdfcf8', 100: '#faf6ed',
+              200: '#f4ead8', 300: '#ebdbbf',
+            },
+            terra: {
+              50:  '#fdf3ef', 100: '#fae2d9',
+              200: '#f4c3ae', 300: '#eb9d7e',
+              400: '#c97055', 500: '#b05c42',
+              600: '#944a33', 700: '#7a3c2b',
+              800: '#65312400', 900: '#54281e',
+            },
+          },
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.4; cursor: pointer; }
+    .dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.3; }
+  </style>
+
+  <!-- React 18 + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Data store (plain JS, no JSX) -->
+  <script src="data.js"></script>
+
+  <!-- Components (load order matters — each exports to window) -->
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="auth.jsx"></script>
+  <script type="text/babel" src="sidebar.jsx"></script>
+  <script type="text/babel" src="dashboard.jsx"></script>
+  <script type="text/babel" src="products.jsx"></script>
+  <script type="text/babel" src="routine.jsx"></script>
+  <script type="text/babel" src="reactions.jsx"></script>
+  <script type="text/babel" src="calendar.jsx"></script>
+  <script type="text/babel" src="patchtest.jsx"></script>
+  <script type="text/babel" src="timeline.jsx"></script>
+  <script type="text/babel" src="settings.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</head>
+<body class="bg-cream-100">
+  <div id="root"></div>
+</body>
+</html>
