@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (toggled by adding .dark to <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-family-sans: 'DM Sans', sans-serif;
+
+  /* Sage green */
+  --color-sage-50:  #f2f7f2;
+  --color-sage-100: #e0ede0;
+  --color-sage-200: #c3dbc3;
+  --color-sage-300: #97c097;
+  --color-sage-400: #6ba06b;
+  --color-sage-500: #4a7c4a;
+  --color-sage-600: #3a6b3a;
+  --color-sage-700: #2e552e;
+  --color-sage-800: #254525;
+  --color-sage-900: #1e371e;
+
+  /* Cream */
+  --color-cream-50:  #fdfcf8;
+  --color-cream-100: #faf7f0;
+  --color-cream-200: #f5ede0;
+  --color-cream-300: #ede0cc;
+  --color-cream-400: #e0cc99;
+  --color-cream-500: #d4b866;
+  --color-cream-600: #b89a40;
+  --color-cream-700: #8c7430;
+  --color-cream-800: #665520;
+  --color-cream-900: #4d3f18;
+
+  /* Terra cotta */
+  --color-terra-50:  #fdf5f2;
+  --color-terra-100: #fae8e0;
+  --color-terra-200: #f5d0c2;
+  --color-terra-300: #edb09a;
+  --color-terra-400: #e28a6e;
+  --color-terra-500: #d4664a;
+  --color-terra-600: #b84d34;
+  --color-terra-700: #8c3a28;
+  --color-terra-800: #662c1e;
+  --color-terra-900: #4d2016;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1cdc7; border-radius: 99px; }
+.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
