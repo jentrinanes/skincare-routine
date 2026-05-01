@@ -18,7 +18,7 @@ cd api && npm run watch      # tsc in watch mode (pair with func start)
 # Full stack: both processes must run simultaneously for the app to work
 ```
 
-**Dev prerequisites:** `api/local.settings.json` (gitignored) must exist with Cosmos emulator credentials, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID`, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS origin `http://localhost:5173`. The Azure Cosmos DB Emulator must be running at `https://localhost:8081` before the API will start. The frontend env var (`VITE_API_BASE=http://localhost:7071/api`) is already set in `.env.development`.
+**Dev prerequisites:** `api/local.settings.json` (gitignored) must exist with Cosmos emulator credentials, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID`, `FRONTEND_URL=http://localhost:5173`, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS origin `http://localhost:5173`. The Azure Cosmos DB Emulator must be running at `https://localhost:8081` before the API will start. The frontend env var (`VITE_API_BASE=http://localhost:7071/api`) is already set in `.env.development`.
 
 **No CI/CD:** there are no GitHub Actions workflows or Azure Pipelines configured.
 
@@ -39,6 +39,7 @@ On startup, `AppProvider` (`src/context/AppContext.tsx`) hydrates the store from
 - `LOGOUT`: clears `sessionStorage`, calls `setUserId(null)`, clears `store.user`
 - Session restore on mount: if `sessionStorage` has a userId, `fetchAllData` runs and `LOAD_STORE` restores the user from the returned profile
 - `App.tsx` gates on `store.user` — auth pages are shown when it is `null`
+- Password reset: `api.auth.forgotPassword(email)` → stores a token on the user doc, returns `{ resetUrl }` (frontend must present a reset form at that URL); `api.auth.resetPassword(token, password)` → validates token expiry, re-hashes with a new salt, clears the token
 
 ### API layer
 
@@ -48,7 +49,7 @@ Azure Functions v4 model (Node.js/TypeScript). Lives in `api/` — a separate pa
 api/src/
 ├── db.ts                  # CosmosClient singleton
 ├── functions/
-│   ├── auth.ts            # POST /api/auth/register, POST /api/auth/login
+│   ├── auth.ts            # POST /api/auth/register, /login, /forgot-password, /reset-password
 │   ├── products.ts        # CRUD /api/products
 │   ├── routineItems.ts    # CRUD /api/routine-items
 │   ├── logs.ts            # upsert/delete/list /api/logs
@@ -62,7 +63,7 @@ api/src/
 
 `getUserId(req)` in `api/src/utils/auth.ts` is the **SWA auth swap point**. Currently reads `x-user-id` header (sent by the frontend client after login). When SWA auth is wired up, replace that one function body to read from `x-ms-client-principal` instead.
 
-`api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`. In production the API reads `COSMOS_ENDPOINT`, `COSMOS_KEY`, and `COSMOS_DATABASE` from Azure Functions app settings.
+`api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`. In production the API reads `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE`, and `FRONTEND_URL` from Azure Functions app settings.
 
 #### Adding a new API function
 
