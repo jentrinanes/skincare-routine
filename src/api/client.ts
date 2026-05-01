@@ -31,6 +31,10 @@ export const api = {
       request<UserProfile>('/auth/register', { method: 'POST', ...body(data) }),
     login: (data: { email: string; password: string }) =>
       request<UserProfile>('/auth/login', { method: 'POST', ...body(data) }),
+    forgotPassword: (email: string) =>
+      request<{ resetUrl: string | null }>('/auth/forgot-password', { method: 'POST', ...body({ email }) }),
+    resetPassword: (token: string, password: string) =>
+      request<{ message: string }>('/auth/reset-password', { method: 'POST', ...body({ token, password }) }),
   },
 
   products: {

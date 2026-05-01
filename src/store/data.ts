@@ -27,6 +27,7 @@ export const PAO_OPTIONS: number[] = [3, 6, 9, 12, 18, 24, 36];
 export const FREQUENCY_OPTIONS: { value: string; label: string }[] = [
   { value: 'daily',     label: 'Every day' },
   { value: 'alternate', label: 'Every other day' },
+  { value: '3rd-day',  label: 'Every 3rd day' },
   { value: '2x-week',  label: '2× per week' },
   { value: '1x-week',  label: '1× per week' },
 ];

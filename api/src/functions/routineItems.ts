@@ -41,7 +41,7 @@ app.http('listRoutineItems', {
     try {
       const userId = getUserId(req);
       const { resources } = await container.items
-        .query({ query: 'SELECT * FROM c ORDER BY c.order ASC' }, { partitionKey: userId })
+        .query({ query: 'SELECT * FROM c ORDER BY c["order"] ASC' }, { partitionKey: userId })
         .fetchAll();
       return ok(resources.map(strip));
     } catch (e) {

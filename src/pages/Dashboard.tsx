@@ -171,6 +171,7 @@ export default function Dashboard() {
     const todayLocal = new Date(today + 'T00:00:00');
     if (item.frequency === 'daily') return true;
     if (item.frequency === 'alternate') return daysDiff % 2 === 0;
+    if (item.frequency === '3rd-day')  return daysDiff % 3 === 0;
     if (item.frequency === '2x-week') return [1, 4].includes(todayLocal.getDay());
     if (item.frequency === '1x-week') return todayLocal.getDay() === 1;
     return true;

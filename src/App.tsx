@@ -4,6 +4,7 @@ import Sidebar from './layout/Sidebar';
 import LoginPage from './auth/LoginPage';
 import RegisterPage from './auth/RegisterPage';
 import ForgotPage from './auth/ForgotPage';
+import ResetPasswordPage from './auth/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Routine from './pages/Routine';
@@ -31,6 +32,9 @@ export default function App() {
   const [page, setPage] = useState<AppPage>('dashboard');
   const [authPage, setAuthPage] = useState<AuthPage>('login');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('reset')
+  );
 
   // Sync dark mode to <html>
   useEffect(() => {
@@ -71,6 +75,18 @@ export default function App() {
   }
 
   if (!store.user) {
+    if (resetToken) {
+      return (
+        <ResetPasswordPage
+          token={resetToken}
+          onNavigate={page => {
+            setResetToken(null);
+            history.replaceState(null, '', window.location.pathname);
+            setAuthPage(page);
+          }}
+        />
+      );
+    }
     return (
       <>
         {authPage === 'login'    && <LoginPage    onNavigate={setAuthPage} />}

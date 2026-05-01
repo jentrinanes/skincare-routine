@@ -1,6 +1,6 @@
 export type ProductStatus = 'active' | 'unopened' | 'finished';
 export type Period = 'AM' | 'PM';
-export type Frequency = 'daily' | 'alternate' | '2x-week' | '1x-week';
+export type Frequency = 'daily' | 'alternate' | '3rd-day' | '2x-week' | '1x-week';
 export type PatchTestStatus = 'active' | 'passed' | 'failed' | 'abandoned';
 
 export interface Product {
@@ -98,4 +98,4 @@ export type AppPage =
   | 'timeline'
   | 'settings';
 
-export type AuthPage = 'login' | 'register' | 'forgot';
+export type AuthPage = 'login' | 'register' | 'forgot' | 'reset';

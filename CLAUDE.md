@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev                  # Vite dev server → http://localhost:5173
 npm run build                # tsc -b && vite build
 npm run preview              # preview production build
-npx tsc -b --noEmit          # type-check (no test suite yet)
+npx tsc -b --noEmit          # type-check (no test suite; Vitest is the natural fit if one is added)
 
 # API (run in a separate terminal)
 cd api && npm start          # tsc build + func start → http://localhost:7071
@@ -17,6 +17,10 @@ cd api && npm run watch      # tsc in watch mode (pair with func start)
 
 # Full stack: both processes must run simultaneously for the app to work
 ```
+
+**Dev prerequisites:** `api/local.settings.json` (gitignored) must exist with Cosmos emulator credentials, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID`, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS origin `http://localhost:5173`. The Azure Cosmos DB Emulator must be running at `https://localhost:8081` before the API will start. The frontend env var (`VITE_API_BASE=http://localhost:7071/api`) is already set in `.env.development`.
+
+**No CI/CD:** there are no GitHub Actions workflows or Azure Pipelines configured.
 
 ## Architecture
 
@@ -58,9 +62,11 @@ api/src/
 
 `getUserId(req)` in `api/src/utils/auth.ts` is the **SWA auth swap point**. Currently reads `x-user-id` header (sent by the frontend client after login). When SWA auth is wired up, replace that one function body to read from `x-ms-client-principal` instead.
 
-`api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`.
+`api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`. In production the API reads `COSMOS_ENDPOINT`, `COSMOS_KEY`, and `COSMOS_DATABASE` from Azure Functions app settings.
 
 #### Adding a new API function
+
+Routes are registered inline in each function file via `app.http(...)` — there is no central router or `function.json`.
 
 1. Create `api/src/functions/myEntity.ts`, register routes with `app.http(...)` (v4 model)
 2. Call `getUserId(req)` from `../utils/auth` and helpers from `../utils/response`
@@ -116,7 +122,7 @@ import { Btn, Card, Icon, Badge, Modal, Select, FormField,
 ```
 `inputCls` (the shared input class string) is exported from `src/components/FormField.tsx`, not from the barrel.
 
-`Icon` accepts a `name` prop drawn from a fixed SVG dictionary (sun, moon, check, plus, edit, trash, menu, calendar, shield, and ~25 more). Check `src/components/Icon.tsx` for the full list before adding a new icon.
+`Icon` accepts a `name` prop drawn from a fixed SVG dictionary. Full list: `sun moon check plus edit trash x chevronDown chevronRight chevronLeft alertCircle calendar package activity clock settings user layout logout droplet search menu arrowUp arrowDown flame shield info sparkles`. Add new icons directly to the `ICONS` object in `src/components/Icon.tsx`.
 
 ### Key business logic (all in `src/store/data.ts`)
 
