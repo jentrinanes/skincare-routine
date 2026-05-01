@@ -2,7 +2,8 @@
 node_modules/
 
 # Build output
-dist/           # covers both dist/ and api/dist/
+dist/
+**/dist/
 
 # Azure Functions
 api/local.settings.json
