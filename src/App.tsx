@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AppContext } from './context/AppContext';
-import { useStore } from './store/reducer';
+import { useAppContext } from './context/AppContext';
 import Sidebar from './layout/Sidebar';
 import LoginPage from './auth/LoginPage';
 import RegisterPage from './auth/RegisterPage';
@@ -28,7 +27,7 @@ const PAGE_COMPONENTS: Record<AppPage, React.ComponentType> = {
 };
 
 export default function App() {
-  const { store, dispatch } = useStore();
+  const { store, loading } = useAppContext();
   const [page, setPage] = useState<AppPage>('dashboard');
   const [authPage, setAuthPage] = useState<AuthPage>('login');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,22 +57,31 @@ export default function App() {
     return () => clearInterval(interval);
   }, [store.userProfile?.notifications]);
 
-  const contextValue = { store, dispatch };
   const PageComponent = PAGE_COMPONENTS[page];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-cream-100 dark:bg-zinc-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-sage-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-stone-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!store.user) {
     return (
-      <AppContext.Provider value={contextValue}>
+      <>
         {authPage === 'login'    && <LoginPage    onNavigate={setAuthPage} />}
         {authPage === 'register' && <RegisterPage onNavigate={setAuthPage} />}
         {authPage === 'forgot'   && <ForgotPage   onNavigate={setAuthPage} />}
-      </AppContext.Provider>
+      </>
     );
   }
 
   return (
-    <AppContext.Provider value={contextValue}>
-      <div className="flex min-h-screen bg-cream-100 dark:bg-zinc-950 font-sans">
+    <div className="flex min-h-screen bg-cream-100 dark:bg-zinc-950 font-sans">
         <Sidebar page={page} onNavigate={setPage} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -96,6 +104,5 @@ export default function App() {
           </main>
         </div>
       </div>
-    </AppContext.Provider>
   );
 }

@@ -3,18 +3,34 @@ import AuthLayout from './AuthLayout';
 import { Card, Btn } from '../components';
 import FormField, { inputCls } from '../components/FormField';
 import { useAppContext } from '../context/AppContext';
+import { api } from '../api/client';
 import type { AuthPage } from '../types';
 
 export default function LoginPage({ onNavigate }: { onNavigate: (page: AuthPage) => void }) {
   const { dispatch } = useAppContext();
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail]     = useState('');
+  const [pass, setPass]       = useState('');
+  const [error, setError]     = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !pass) { setError('Please fill in all fields.'); return; }
-    dispatch({ type: 'LOGIN', payload: { name: email.split('@')[0]!, email } });
+    setError('');
+    if (!email.trim() || !pass) { setError('Please fill in all fields.'); return; }
+
+    setLoading(true);
+    try {
+      const profile = await api.auth.login({ email: email.trim(), password: pass });
+      dispatch({
+        type: 'LOGIN',
+        payload: { id: profile.id!, name: profile.name, email: profile.email, skinType: profile.skinType },
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg.includes('401') ? 'Invalid email or password.' : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,7 +52,9 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: AuthPage)
             className="text-xs text-sage-600 dark:text-sage-400 hover:underline">
             Forgot password?
           </button>
-          <Btn className="w-full justify-center" type="submit">Sign in</Btn>
+          <Btn className="w-full justify-center" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </Btn>
         </form>
       </Card>
       <p className="text-center text-xs text-stone-400 dark:text-stone-500 mt-4">

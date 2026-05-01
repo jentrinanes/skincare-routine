@@ -5,19 +5,80 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev        # Start Vite dev server (http://localhost:5173)
-npm run build      # tsc -b && vite build
-npm run preview    # Preview production build
-npx tsc -b --noEmit  # Type-check without emitting (no test suite yet)
+# Frontend
+npm run dev                  # Vite dev server → http://localhost:5173
+npm run build                # tsc -b && vite build
+npm run preview              # preview production build
+npx tsc -b --noEmit          # type-check (no test suite yet)
+
+# API (run in a separate terminal)
+cd api && npm start          # tsc build + func start → http://localhost:7071
+cd api && npm run watch      # tsc in watch mode (pair with func start)
+
+# Full stack: both processes must run simultaneously for the app to work
 ```
 
 ## Architecture
 
 ### State management
 
-All app state lives in a single `AppStore` object (defined in `src/types.ts`) managed by a `useReducer` in `src/store/reducer.ts`. The reducer calls `saveStore()` on every action to persist to `localStorage`. The store is loaded once at app start via the lazy initialiser in `useStore()`.
+All app state lives in a single `AppStore` object (`src/types.ts`) managed by `useReducer` in `src/store/reducer.ts`. The API is the source of truth — there is no localStorage persistence.
 
-State flows down through `AppContext` (`src/context/AppContext.tsx`). Every page and most components consume it via `useAppContext()` — there are no local server-fetch patterns yet.
+On startup, `AppProvider` (`src/context/AppContext.tsx`) hydrates the store from the API via `LOAD_STORE`. While fetching, `loading: boolean` (exposed from context) is `true`; `App.tsx` shows a spinner. After load, state flows down to pages via `useAppContext()`.
+
+**Optimistic updates:** `apiDispatch` (the context's `dispatch`) applies actions locally first, then calls `syncToApi` to mirror the change to the API in the background. Failures are console-logged; there is no rollback yet.
+
+### Auth flow
+
+- Registration / login: `api.auth.register` / `api.auth.login` in `src/api/client.ts` → on success, dispatch `LOGIN` with `{ id, name, email, skinType }`
+- `LOGIN` in `AppContext`: saves `userId` to `sessionStorage`, calls `setUserId()` on the client module, then fetches all data
+- `LOGOUT`: clears `sessionStorage`, calls `setUserId(null)`, clears `store.user`
+- Session restore on mount: if `sessionStorage` has a userId, `fetchAllData` runs and `LOAD_STORE` restores the user from the returned profile
+- `App.tsx` gates on `store.user` — auth pages are shown when it is `null`
+
+### API layer
+
+Azure Functions v4 model (Node.js/TypeScript). Lives in `api/` — a separate package with its own `package.json` and `tsconfig.json`.
+
+```
+api/src/
+├── db.ts                  # CosmosClient singleton
+├── functions/
+│   ├── auth.ts            # POST /api/auth/register, POST /api/auth/login
+│   ├── products.ts        # CRUD /api/products
+│   ├── routineItems.ts    # CRUD /api/routine-items
+│   ├── logs.ts            # upsert/delete/list /api/logs
+│   ├── reactions.ts       # CRUD /api/reactions
+│   ├── patchTests.ts      # CRUD /api/patch-tests
+│   └── userProfiles.ts    # GET/PUT /api/profile
+└── utils/
+    ├── auth.ts            # getUserId(req) — reads x-user-id header
+    └── response.ts        # ok / created / noContent / badRequest / notFound / conflict / serverError
+```
+
+`getUserId(req)` in `api/src/utils/auth.ts` is the **SWA auth swap point**. Currently reads `x-user-id` header (sent by the frontend client after login). When SWA auth is wired up, replace that one function body to read from `x-ms-client-principal` instead.
+
+`api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`.
+
+#### Adding a new API function
+
+1. Create `api/src/functions/myEntity.ts`, register routes with `app.http(...)` (v4 model)
+2. Call `getUserId(req)` from `../utils/auth` and helpers from `../utils/response`
+3. Add typed fetch functions to `src/api/client.ts`
+4. Handle relevant actions in `src/api/sync.ts`
+
+### Cosmos DB schema
+
+Database: `skincare`
+
+| Container | Partition key | Notes |
+|---|---|---|
+| `products` | `/userId` | |
+| `routineItems` | `/userId` | |
+| `logs` | `/userId` | `id` computed as `${date}_${routineItemId}_${period}` |
+| `reactions` | `/userId` | |
+| `patchTests` | `/userId` | |
+| `userProfiles` | `/id` | `id` = userId; stores `passwordHash`/`passwordSalt` |
 
 ### Adding a new page
 
@@ -29,8 +90,9 @@ State flows down through `AppContext` (`src/context/AppContext.tsx`). Every page
 ### Adding a new action
 
 1. Add the action type to the `Action` union in `src/store/reducer.ts`.
-2. Handle it in the `switch` — assign `next` and let the bottom of the switch call `saveStore(next)`.
+2. Handle it in the `switch` — assign `next` and `return next` at the end.
 3. Add any new entity types to `src/types.ts` and `AppStore`.
+4. Add the corresponding API call to `src/api/sync.ts` so mutations are persisted.
 
 ### Dark mode
 
@@ -40,21 +102,41 @@ Toggled by dispatching `SET_DARK_MODE`. `App.tsx` syncs the boolean to `document
 
 Custom colours (`sage`, `cream`, `terra`) and the `DM Sans` font are defined in `src/index.css` under `@theme` — there is no `tailwind.config.js`. Tailwind v4 reads everything from CSS.
 
+### Responsive layout
+
+Desktop: fixed sidebar (`src/layout/Sidebar.tsx`) + scrollable main area. Mobile: sidebar hidden by default, revealed as a full-height overlay with a backdrop when the hamburger is tapped. The toggle lives in `App.tsx`. Use `hidden md:flex` / `md:hidden` breakpoints to match the existing pattern.
+
 ### Shared components
 
 `src/components/index.ts` re-exports all UI primitives. Import from there, not from individual files:
 ```ts
-import { Btn, Card, Icon, Badge, FormField } from '../components';
+import { Btn, Card, Icon, Badge, Modal, Select, FormField,
+         EmptyState, PageHeader, ConfirmDialog,
+         ActivesBadges, StatusBadge, BarrierLoadMeter } from '../components';
 ```
 `inputCls` (the shared input class string) is exported from `src/components/FormField.tsx`, not from the barrel.
 
+`Icon` accepts a `name` prop drawn from a fixed SVG dictionary (sun, moon, check, plus, edit, trash, menu, calendar, shield, and ~25 more). Check `src/components/Icon.tsx` for the full list before adding a new icon.
+
 ### Key business logic (all in `src/store/data.ts`)
 
-- `computeBarrierLoad(actives)` — sums `ACTIVE_WEIGHTS` for a set of actives.
+- `computeBarrierLoad(actives)` — sums `ACTIVE_WEIGHTS` for a set of actives; Tretinoin=3, Retinol/Vit-C=2, most others 0–1.
+- `barrierLoadLabel(score)` — returns a `{ label, color }` pair (gentle / moderate / active / high).
 - `computeExpiry(openedDate, paoMonths)` — adds months to open date, returns `YYYY-MM-DD`.
+- `computeStreak(logs)` / `longestStreak(logs)` — current and all-time consecutive-day counts.
 - `getTodayInTz(tz)` — returns today's date in the user's IANA timezone using `Intl.DateTimeFormat('en-CA')`. Always use this (not `new Date()`) when you need "today" for routine logic.
 - Conflict detection rules live in `src/pages/Dashboard.tsx` (co-located with the UI that renders them).
 
-### Planned backend
+Constants also exported from `data.ts`: `ACTIVES_LIST` (44 ingredients), `PRODUCT_TYPES` (15 categories), `PAO_OPTIONS`, `FREQUENCY_OPTIONS`, `SKIN_TYPES`.
 
-localStorage is a temporary data layer. The roadmap is Azure Functions (API) + Azure Cosmos DB + Azure Static Web Apps auth. When migrating, `loadStore`/`saveStore` in `src/store/data.ts` are the only persistence callsites to replace.
+### Browser notifications
+
+`App.tsx` polls every 30 seconds and fires `Notification` API alerts when the current time matches the AM or PM notification times stored in `userProfile.notifications`.
+
+### Pending: SWA auth
+
+When Azure Static Web Apps auth is wired up:
+1. Replace the body of `getUserId(req)` in `api/src/utils/auth.ts`
+2. Remove `setUserId` / `x-user-id` from `src/api/client.ts`
+3. Remove the `sessionStorage` session restore from `src/context/AppContext.tsx`
+4. Do **not** enable the built-in SWA auth provider — auth should remain custom

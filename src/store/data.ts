@@ -1,4 +1,4 @@
-import type { AppStore, Product, RoutineItem, Reaction } from '../types';
+import type { AppStore } from '../types';
 
 export const ACTIVES_LIST: string[] = [
   'Retinol', 'Retinaldehyde', 'Tretinoin', 'Bakuchiol',
@@ -104,52 +104,15 @@ export function getTodayInTz(tz: string): string {
   }
 }
 
-// ── Sample data ───────────────────────────────────────────────────────────────
+// ── Initial state ─────────────────────────────────────────────────────────────
 
-const SAMPLE_PRODUCTS: Product[] = [
-  { id: 'p1', name: 'Hydrating Facial Cleanser', brand: 'CeraVe', type: 'Cleanser',
-    status: 'active', openedDate: '2025-12-01', pao: 12, actives: ['Ceramides', 'Panthenol (B5)', 'Hyaluronic Acid'], notes: '' },
-  { id: 'p2', name: '2% BHA Liquid Exfoliant', brand: "Paula's Choice", type: 'Exfoliant',
-    status: 'active', openedDate: '2025-12-15', pao: 12, actives: ['BHA – Salicylic Acid'], notes: 'Start slow — 3x/week' },
-  { id: 'p3', name: 'Niacinamide 10% + Zinc 1%', brand: 'The Ordinary', type: 'Serum',
-    status: 'active', openedDate: '2026-01-05', pao: 12, actives: ['Niacinamide', 'Zinc PCA'], notes: '' },
-  { id: 'p4', name: 'Retinol 0.5% in Squalane', brand: 'The Ordinary', type: 'Treatment',
-    status: 'active', openedDate: '2026-02-01', pao: 12, actives: ['Retinol', 'Squalane'], notes: 'Only PM' },
-  { id: 'p5', name: 'Toleriane Double Repair SPF', brand: 'La Roche-Posay', type: 'Moisturiser',
-    status: 'active', openedDate: '2025-11-20', pao: 12, actives: ['Ceramides'], notes: '' },
-  { id: 'p6', name: 'UV Clear SPF 46', brand: 'EltaMD', type: 'Sunscreen',
-    status: 'active', openedDate: '2026-01-10', pao: 12, actives: ['Niacinamide'], notes: '' },
-  { id: 'p7', name: 'The Dewy Skin Cream', brand: 'Tatcha', type: 'Moisturiser',
-    status: 'unopened', openedDate: null, pao: 12, actives: ['Hyaluronic Acid', 'Ceramides'], notes: '' },
-  { id: 'p8', name: 'Vitamin C Suspension 23%', brand: 'The Ordinary', type: 'Serum',
-    status: 'active', openedDate: '2026-03-01', pao: 6, actives: ['Vitamin C (L-AA)', 'Ferulic Acid'], notes: 'AM only' },
-];
-
-const SAMPLE_ROUTINE: RoutineItem[] = [
-  { id: 'r1', productId: 'p1', period: 'AM', frequency: 'daily',     startDate: '2025-12-01', order: 0 },
-  { id: 'r2', productId: 'p3', period: 'AM', frequency: 'daily',     startDate: '2026-01-05', order: 1 },
-  { id: 'r3', productId: 'p8', period: 'AM', frequency: 'daily',     startDate: '2026-03-01', order: 2 },
-  { id: 'r4', productId: 'p6', period: 'AM', frequency: 'daily',     startDate: '2026-01-10', order: 3 },
-  { id: 'r5', productId: 'p1', period: 'PM', frequency: 'daily',     startDate: '2025-12-01', order: 0 },
-  { id: 'r6', productId: 'p2', period: 'PM', frequency: 'alternate', startDate: '2026-01-01', order: 1 },
-  { id: 'r7', productId: 'p4', period: 'PM', frequency: '2x-week',   startDate: '2026-02-01', order: 2 },
-  { id: 'r8', productId: 'p5', period: 'PM', frequency: 'daily',     startDate: '2025-11-20', order: 3 },
-];
-
-const SAMPLE_REACTIONS: Reaction[] = [
-  { id: 'rx1', date: '2026-02-08', description: 'Slight peeling around the nose — likely from introducing retinol too fast.', suspectedProducts: ['p4'] },
-  { id: 'rx2', date: '2026-03-15', description: 'Tingling on cheeks after layering vitamin C and BHA in the same session. Redness resolved within an hour.', suspectedProducts: ['p8', 'p2'] },
-];
-
-// ── Persistence ───────────────────────────────────────────────────────────────
-
-function seedStore(): AppStore {
+export function loadStore(): AppStore {
   return {
     user: null,
-    products: SAMPLE_PRODUCTS,
-    routine: SAMPLE_ROUTINE,
+    products: [],
+    routine: [],
     logs: [],
-    reactions: SAMPLE_REACTIONS,
+    reactions: [],
     patchTests: [],
     darkMode: false,
     skinTypes: SKIN_TYPES,
@@ -160,18 +123,4 @@ function seedStore(): AppStore {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     },
   };
-}
-
-export function loadStore(): AppStore {
-  try {
-    const raw = localStorage.getItem('skincareApp');
-    if (raw) return JSON.parse(raw) as AppStore;
-  } catch { /* ignore */ }
-  const store = seedStore();
-  saveStore(store);
-  return store;
-}
-
-export function saveStore(store: AppStore): void {
-  localStorage.setItem('skincareApp', JSON.stringify(store));
 }

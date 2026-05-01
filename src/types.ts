@@ -60,6 +60,7 @@ export interface UserNotifications {
 }
 
 export interface UserProfile {
+  id?: string;     // set when loaded from API (= userId)
   name: string;
   skinType: string;
   email: string;
@@ -69,6 +70,7 @@ export interface UserProfile {
 }
 
 export interface User {
+  id: string;
   name: string;
   email: string;
   skinType?: string;

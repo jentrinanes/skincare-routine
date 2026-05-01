@@ -1,6 +1,6 @@
 import { useReducer } from 'react';
 import type { AppStore, User, UserProfile, Product, RoutineItem, Log, Reaction, PatchTest } from '../types';
-import { loadStore, saveStore } from './data';
+import { loadStore } from './data';
 
 export type Action =
   | { type: 'LOGIN'; payload: User }
@@ -23,7 +23,8 @@ export type Action =
   | { type: 'DELETE_PATCH_TEST'; payload: string }
   | { type: 'ADD_REACTION'; payload: Reaction }
   | { type: 'UPDATE_REACTION'; payload: Reaction }
-  | { type: 'DELETE_REACTION'; payload: string };
+  | { type: 'DELETE_REACTION'; payload: string }
+  | { type: 'LOAD_STORE'; payload: Partial<AppStore> };
 
 function reducer(state: AppStore, action: Action): AppStore {
   let next: AppStore;
@@ -36,7 +37,13 @@ function reducer(state: AppStore, action: Action): AppStore {
       next = { ...state, user: null };
       break;
     case 'UPDATE_PROFILE':
-      next = { ...state, userProfile: action.payload, user: { ...state.user, ...action.payload } };
+      next = {
+        ...state,
+        userProfile: action.payload,
+        user: state.user
+          ? { ...state.user, name: action.payload.name, email: action.payload.email, skinType: action.payload.skinType }
+          : null,
+      };
       break;
     case 'SET_DARK_MODE':
       next = { ...state, darkMode: action.payload };
@@ -127,11 +134,23 @@ function reducer(state: AppStore, action: Action): AppStore {
       next = { ...state, reactions: state.reactions.filter(r => r.id !== action.payload) };
       break;
 
+    case 'LOAD_STORE': {
+      const profile = action.payload.userProfile;
+      next = {
+        ...state,
+        ...action.payload,
+        // Restore user from profile when hydrating from API
+        user: profile?.id && profile?.name && profile?.email
+          ? { id: profile.id, name: profile.name, email: profile.email, skinType: profile.skinType }
+          : state.user,
+      };
+      break;
+    }
+
     default:
       return state;
   }
 
-  saveStore(next);
   return next;
 }
 
