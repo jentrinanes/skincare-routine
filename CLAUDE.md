@@ -34,12 +34,14 @@ On startup, `AppProvider` (`src/context/AppContext.tsx`) hydrates the store from
 
 ### Auth flow
 
+Auth UI lives in `src/auth/`: `LoginPage.tsx`, `RegisterPage.tsx`, `ForgotPage.tsx`, `ResetPasswordPage.tsx`.
+
 - Registration / login: `api.auth.register` / `api.auth.login` in `src/api/client.ts` → on success, dispatch `LOGIN` with `{ id, name, email, skinType }`
-- `LOGIN` in `AppContext`: saves `userId` to `sessionStorage`, calls `setUserId()` on the client module, then fetches all data
+- `LOGIN` in `AppContext`: saves `userId` to `sessionStorage` under key `skUserId`, calls `setUserId()` on the client module, then fetches all data
 - `LOGOUT`: clears `sessionStorage`, calls `setUserId(null)`, clears `store.user`
-- Session restore on mount: if `sessionStorage` has a userId, `fetchAllData` runs and `LOAD_STORE` restores the user from the returned profile
+- Session restore on mount: if `sessionStorage['skUserId']` exists, `fetchAllData` runs and `LOAD_STORE` restores the user from the returned profile
 - `App.tsx` gates on `store.user` — auth pages are shown when it is `null`
-- Password reset: `api.auth.forgotPassword(email)` → stores a token on the user doc, returns `{ resetUrl }` (frontend must present a reset form at that URL); `api.auth.resetPassword(token, password)` → validates token expiry, re-hashes with a new salt, clears the token
+- Password reset: `api.auth.forgotPassword(email)` → stores a token on the user doc, returns `{ resetUrl }` (frontend must present a reset form at that URL); `api.auth.resetPassword(token, password)` → validates token expiry (1-hour window), re-hashes with a new salt, clears the token
 
 ### API layer
 
@@ -64,6 +66,10 @@ api/src/
 `getUserId(req)` in `api/src/utils/auth.ts` is the **SWA auth swap point**. Currently reads `x-user-id` header (sent by the frontend client after login). When SWA auth is wired up, replace that one function body to read from `x-ms-client-principal` instead.
 
 `api/local.settings.json` is gitignored. It holds the Cosmos emulator endpoint/key, `COSMOS_DATABASE=skincare`, `DEFAULT_USER_ID` fallback, `NODE_TLS_REJECT_UNAUTHORIZED=0`, and CORS for `:5173`. In production the API reads `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE`, and `FRONTEND_URL` from Azure Functions app settings.
+
+**Response pattern:** every entity function file has a local `strip()` helper that removes `userId` before returning data to the client. Follow this in any new function.
+
+**Password security:** PBKDF2 (100,000 iterations, SHA-256). The login endpoint always hashes — even for non-existent users with a dummy salt — to prevent timing-based email enumeration. Reset tokens expire after 1 hour.
 
 #### Adding a new API function
 
@@ -132,9 +138,38 @@ import { Btn, Card, Icon, Badge, Modal, Select, FormField,
 - `computeExpiry(openedDate, paoMonths)` — adds months to open date, returns `YYYY-MM-DD`.
 - `computeStreak(logs)` / `longestStreak(logs)` — current and all-time consecutive-day counts.
 - `getTodayInTz(tz)` — returns today's date in the user's IANA timezone using `Intl.DateTimeFormat('en-CA')`. Always use this (not `new Date()`) when you need "today" for routine logic.
-- Conflict detection rules live in `src/pages/Dashboard.tsx` (co-located with the UI that renders them).
 
 Constants also exported from `data.ts`: `ACTIVES_LIST` (44 ingredients), `PRODUCT_TYPES` (15 categories), `PAO_OPTIONS`, `FREQUENCY_OPTIONS`, `SKIN_TYPES`.
+
+### Routine scheduling
+
+Frequency → which days a routine item appears (computed in `src/pages/Dashboard.tsx`):
+
+| Frequency | Rule |
+|---|---|
+| `daily` | always |
+| `alternate` | every other day (day-index parity) |
+| `3rd-day` | every 3rd day (day-index % 3 === 0) |
+| `2x-week` | Mondays & Thursdays (JS `getDay()` 1 & 4) |
+| `1x-week` | Mondays only (JS `getDay()` 1) |
+
+Always use `getTodayInTz()` to get the day; never `new Date()`.
+
+### Conflict detection
+
+Lives in `src/pages/Dashboard.tsx` (lines ~9–51), co-located with the UI — **not** in `data.ts`. Conflicts are checked per period (AM/PM) against the active ingredients in that session's routine.
+
+Ingredient groups (`ACTIVE_GROUPS`): `retinoids` (Retinol, Retinaldehyde, Tretinoin), `aha`, `bha`, `pha`, `vitc_strong` (Vitamin C L-AA), `bp` (Benzoyl Peroxide).
+
+Rules and severity:
+1. Retinoid + AHA/BHA → **high**
+2. Retinoid + Vitamin C (L-AA) → **medium**
+3. Benzoyl Peroxide + Retinoid → **high**
+4. BP + Vitamin C (L-AA) → **medium**
+5. 2+ of AHA/BHA/PHA → **medium**
+6. 2+ retinoids → **high**
+
+Dismissed alerts are stored in `sessionStorage.dismissedConflicts` (survives page reload, cleared on tab close). Users can also "skip" a conflicting product for today's log entry.
 
 ### Browser notifications
 
@@ -147,3 +182,7 @@ When Azure Static Web Apps auth is wired up:
 2. Remove `setUserId` / `x-user-id` from `src/api/client.ts`
 3. Remove the `sessionStorage` session restore from `src/context/AppContext.tsx`
 4. Do **not** enable the built-in SWA auth provider — auth should remain custom
+
+### Infrastructure
+
+Terraform config lives in `infra/`. It provisions the Azure Static Web App but **references an existing Cosmos DB account in a different resource group** (`rg-goyl-loadouts-prod`, account `cosmos-goyl-loadouts-prod`) — that account must exist before running `terraform apply`. After the first deploy, set `FRONTEND_URL` manually in the Azure Functions app settings (it's required for password reset links and is not known until after deploy).

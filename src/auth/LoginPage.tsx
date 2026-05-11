@@ -8,10 +8,11 @@ import type { AuthPage } from '../types';
 
 export default function LoginPage({ onNavigate }: { onNavigate: (page: AuthPage) => void }) {
   const { dispatch } = useAppContext();
-  const [email, setEmail]     = useState('');
-  const [pass, setPass]       = useState('');
-  const [error, setError]     = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail]         = useState('');
+  const [pass, setPass]           = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +24,7 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: AuthPage)
       const profile = await api.auth.login({ email: email.trim(), password: pass });
       dispatch({
         type: 'LOGIN',
-        payload: { id: profile.id!, name: profile.name, email: profile.email, skinType: profile.skinType },
+        payload: { id: profile.id!, name: profile.name, email: profile.email, skinType: profile.skinType, rememberMe },
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -47,11 +48,18 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: AuthPage)
             <input className={inputCls} type="password" placeholder="••••••••"
               value={pass} onChange={e => setPass(e.target.value)} />
           </FormField>
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+                className="accent-sage-600 h-4 w-4 rounded" />
+              <span className="text-xs text-stone-500 dark:text-stone-400">Remember me</span>
+            </label>
+            <button type="button" onClick={() => onNavigate('forgot')}
+              className="text-xs text-sage-600 dark:text-sage-400 hover:underline">
+              Forgot password?
+            </button>
+          </div>
           {error && <p className="text-xs text-terra-500">{error}</p>}
-          <button type="button" onClick={() => onNavigate('forgot')}
-            className="text-xs text-sage-600 dark:text-sage-400 hover:underline">
-            Forgot password?
-          </button>
           <Btn className="w-full justify-center" type="submit" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </Btn>

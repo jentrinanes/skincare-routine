@@ -7,7 +7,7 @@ import type { Product } from '../types';
 
 const BLANK: Omit<Product, 'id'> = {
   name: '', brand: '', type: 'Cleanser', status: 'unopened',
-  openedDate: null, pao: 12, actives: [], notes: '',
+  openedDate: null, pao: 12, actives: [], notes: '', finishedDate: null,
 };
 
 // ── Actives combobox ──────────────────────────────────────────────────────────
@@ -168,6 +168,11 @@ function ProductForm({ initial, onSave, onClose }: { initial: Product | null; on
           </FormField>
         </div>
       )}
+      {form.status === 'finished' && (
+        <FormField label="Finished date">
+          <input type="date" className={inputCls} value={form.finishedDate ?? ''} onChange={e => set('finishedDate', e.target.value || null)} />
+        </FormField>
+      )}
       <FormField label="Actives" hint="Search the list or type a custom active and press Enter to add it">
         <ActivesCombobox selected={form.actives} onChange={v => set('actives', v)} />
       </FormField>
@@ -189,7 +194,7 @@ export default function Products() {
   const { products } = store;
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
 

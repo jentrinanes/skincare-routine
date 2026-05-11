@@ -14,6 +14,7 @@ export interface Product {
   actives: string[];
   notes: string;
   expiry?: string | null;
+  finishedDate?: string | null;
 }
 
 export interface RoutineItem {

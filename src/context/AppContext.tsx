@@ -42,9 +42,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { store, dispatch } = useStore();
   const [loading, setLoading] = useState(true);
 
-  // Restore session on mount — if a userId is in sessionStorage, load all data
+  // Restore session on mount — check localStorage (remember me) then sessionStorage
   useEffect(() => {
-    const storedId = sessionStorage.getItem(SESSION_KEY);
+    const storedId = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     if (!storedId) { setLoading(false); return; }
     fetchAllData(storedId, dispatch).finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -52,15 +52,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const apiDispatch = useCallback((action: Action) => {
     // Handle auth actions before dispatching to reducer
     if (action.type === 'LOGIN') {
-      const userId = action.payload.id;
-      sessionStorage.setItem(SESSION_KEY, userId);
-      dispatch(action);
+      const { rememberMe, ...user } = action.payload;
+      const userId = user.id;
+      if (rememberMe) {
+        localStorage.setItem(SESSION_KEY, userId);
+        sessionStorage.removeItem(SESSION_KEY);
+      } else {
+        sessionStorage.setItem(SESSION_KEY, userId);
+        localStorage.removeItem(SESSION_KEY);
+      }
+      dispatch({ type: 'LOGIN', payload: user });
       setLoading(true);
       fetchAllData(userId, dispatch).finally(() => setLoading(false));
       return;
     }
 
     if (action.type === 'LOGOUT') {
+      localStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(SESSION_KEY);
       setUserId(null);
       dispatch(action);

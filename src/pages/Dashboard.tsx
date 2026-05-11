@@ -210,6 +210,7 @@ export default function Dashboard() {
   const pmDone = pmItems.filter(r => isChecked(r.id, 'PM')).length;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  const greetingEmoji = hour < 12 ? '🌅' : hour < 17 ? '🌇' : '🌙';
   const dayLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 
   function RoutineCard({ period, items, load, done }: { period: Period; items: RoutineItemWithProduct[]; load: number; done: number }) {
@@ -318,7 +319,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-1">{dayLabel}</p>
-          <h1 className="text-xl font-semibold text-stone-800 dark:text-stone-100">Good {greeting} 👋</h1>
+          <h1 className="text-xl font-semibold text-stone-800 dark:text-stone-100">Good {greeting} {greetingEmoji}</h1>
         </div>
       </div>
 

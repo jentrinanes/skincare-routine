@@ -3,7 +3,7 @@ import type { AppStore, User, UserProfile, Product, RoutineItem, Log, Reaction, 
 import { loadStore } from './data';
 
 export type Action =
-  | { type: 'LOGIN'; payload: User }
+  | { type: 'LOGIN'; payload: User & { rememberMe?: boolean } }
   | { type: 'LOGOUT' }
   | { type: 'UPDATE_PROFILE'; payload: UserProfile }
   | { type: 'SET_DARK_MODE'; payload: boolean }
